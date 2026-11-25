@@ -241,22 +241,27 @@ class _WoltModalSheetAnimatedSwitcherState
     final defaultThemeData = WoltModalSheetDefaultThemeData(context);
     final WoltModalSheetAnimationStyle animationStyle =
         themeData?.animationStyle ?? defaultThemeData.animationStyle;
+    // A rebuild while a page transition is running (keyboard inset, rotation)
+    // calls _addPage again. The previous controller has to be disposed here.
+    // Otherwise its ticker outlives this State, and the completion listener
+    // below reads context after unmount.
+    final AnimationController? previousController = _animationController;
     // An AnimationController is created and attached to this State object (with 'this' as the vsync).
-    _animationController =
-        AnimationController(
-          duration: animationStyle.paginationAnimationStyle.paginationDuration,
-          vsync: this,
-        )..addStatusListener((status) {
-          if (status == AnimationStatus.completed) {
-            //  If the widget is disposed while the animation is still running calling setState
-            //  will throw an exception.
-            if (context.mounted) {
-              setState(() => _onPaginationAnimationComplete());
-            } else {
-              _onPaginationAnimationComplete();
-            }
-          }
-        });
+    final AnimationController animationController = AnimationController(
+      duration: animationStyle.paginationAnimationStyle.paginationDuration,
+      vsync: this,
+    );
+    _animationController = animationController;
+    previousController?.dispose();
+    animationController.addStatusListener((status) {
+      if (status != AnimationStatus.completed) return;
+      // State.context throws once this State is unmounted. context.mounted
+      // reads context first, so it hits that throw instead of the guard.
+      if (!mounted || !identical(_animationController, animationController)) {
+        return;
+      }
+      setState(_onPaginationAnimationComplete);
+    });
 
     // We store the current widgets in currentWidgetsToBeOutgoing, as we're about to replace them.
     final currentWidgetsToBeOutgoing = _incomingPageWidgets;

@@ -1,3 +1,5 @@
+## 0.12.1
+- Fix a crash when the sheet is dismissed during a page transition. A rebuild mid-animation, such as a keyboard inset change, replaced the in-flight pagination controller without disposing it, so the completion listener read context after the sheet was unmounted.
 ## 0.12.0
 - **Breaking:** Migrated from the in-framework `package:flutter/material.dart` and `package:flutter/cupertino.dart` to the standalone [`material_ui`](https://pub.dev/packages/material_ui) and [`cupertino_ui`](https://pub.dev/packages/cupertino_ui) packages. See the [Flutter migration guide](https://docs.flutter.dev/release/breaking-changes/material-ui-and-cupertino-ui).
   - The minimum supported versions are now Flutter 3.44 and Dart 3.12.
